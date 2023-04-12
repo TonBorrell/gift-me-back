@@ -16,7 +16,7 @@ class User(BaseModel):
     email: str
     username: str
     password: str
-    timestamp: str | None = datetime.now().isoformat()
+    timestamp: str
 
 def encrypt_password(password: str) -> str:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

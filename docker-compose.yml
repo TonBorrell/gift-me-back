@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  app:
+    container_name: docker-gift-back
+    image: docker-gift-back
+    build:
+      context: .
+    ports:
+      - 8080:80
