@@ -1,3 +1,4 @@
+from typing import Dict
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 import random
@@ -13,7 +14,7 @@ router = APIRouter(
 )
 
 class Rating(BaseModel):
-    product_id: str
+    asin: str
     rating: int
 
 @router.get('/')
@@ -41,8 +42,14 @@ def get_products_to_rate() -> list:
     return random_response
 
 @router.post('/')
-def set_product_rating(rating: list[Rating]):
+def set_product_rating(rating: Dict[str, str]):
+    print(rating)
+    for asin, rate in rating.items():
+        print(asin, rate)
+    return {'success': 'all rating wrote on db'}
+    """
     for prod_rating in rating:
         set_product_rating_in_db(product_collection=get_products_collection(), product_rating_collection=get_product_rating_collection(), rating=prod_rating.dict())
     return {'success': 'all rating wrote on db'}
+    """
 
