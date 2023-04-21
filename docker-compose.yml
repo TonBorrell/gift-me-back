@@ -7,4 +7,4 @@ services:
     build:
       context: .
     ports:
-      - 8081:80
+      - 8081:8081
