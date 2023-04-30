@@ -8,11 +8,14 @@ import uuid
 def is_product_in_db_by_asin(collection: pymongo.collection.Collection, asin: str):
     return collection.find_one({"asin": {"$eq": asin}})
 
+
 def is_product_in_db_by_id(collection: pymongo.collection.Collection, id: str):
     return collection.find_one({"id": {"$eq": id}})
 
+
 def get_products(collection: pymongo.collection.Collection):
     return collection.find()
+
 
 def add_products_from_json(
     product_collection: pymongo.collection.Collection,
