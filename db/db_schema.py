@@ -18,13 +18,11 @@ users_schema = Schema(
         "email": And(str, len),
         "username": And(str, len),
         "password": And(str, len),
-        "timestamp": And(str, len)
+        "timestamp": And(str, len),
     }
 )
 
 rating_schema = Schema(
-    {
-        "product_id": And(str, len),
-        "rating": And(Use(int), lambda n: 0 <= n <= 5)
-    }
+    {"name": str, "age": str, "preferences": dict[str, bool], "rating": dict[str, int]}
+    # {"asin": And(str, len), "rating": And(Use(int), lambda n: 0 <= n <= 5)}
 )
