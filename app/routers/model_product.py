@@ -7,8 +7,8 @@ from ..db_conn import get_users_collection
 from db.manage_users import add_user_to_db
 
 router = APIRouter(
-    prefix="/api/v1/register",
-    tags=["register"],
+    prefix="/api/v1/model_product",
+    tags=["model_product"],
     responses={404: {"description": "Not found"}},
 )
 
@@ -17,6 +17,7 @@ class User(BaseModel):
     email: str
     username: str
     password: str
+    timestamp: str = None
 
 
 def encrypt_password(password: str) -> str:
