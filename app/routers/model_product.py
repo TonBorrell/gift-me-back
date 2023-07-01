@@ -1,10 +1,14 @@
-from datetime import datetime
+from typing import Dict
 from fastapi import APIRouter, HTTPException, Request
-from passlib.context import CryptContext
 from pydantic import BaseModel
+import os
+from joblib import load
+import pandas as pd
+import json
 
-from ..db_conn import get_users_collection
-from db.manage_users import add_user_to_db
+from db.add_products import get_products, is_product_in_db_by_asin
+from db.product_rating import set_product_rating_in_db, delete_product_rating_in_db
+from ..db_conn import get_products_collection, get_product_rating_collection
 
 router = APIRouter(
     prefix="/api/v1/model_product",
@@ -13,31 +17,58 @@ router = APIRouter(
 )
 
 
-class User(BaseModel):
-    email: str
-    username: str
-    password: str
-    timestamp: str = None
+class Preferences_post(BaseModel):
+    name: str
+    age: str
+    preferences: dict[str, bool]
 
 
-def encrypt_password(password: str) -> str:
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    return pwd_context.hash(password)
+def create_df_to_predict(
+    preferences: Preferences_post,
+    products,
+    asin_dict: dict[str, int],
+    cat_dict: dict[str, int],
+):
+    dataframe = []
+    for document in products:
+        if document["asin"] in asin_dict:
+            actual_doc = {
+                "age": preferences.age,
+                "coffee": preferences.preferences["coffee"],
+                "cooking": preferences.preferences["cooking"],
+                "sports": preferences.preferences["sports"],
+                "cars": preferences.preferences["cars"],
+                "technology": preferences.preferences["technology"],
+                "garden": preferences.preferences["garden"],
+                "asin": asin_dict[document["asin"]],
+                "category": cat_dict[document["category"]["category_id"]],
+                "price": document["price"],
+            }
+            dataframe.append(actual_doc)
 
-
-def verify_password(plain_password, hashed_password):
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    return pwd_context.verify(plain_password, hashed_password)
+    return pd.DataFrame.from_dict(dataframe)
 
 
 @router.post("/")
-async def register_user(user: User):
-    user.password = encrypt_password(password=user.password)
-    response = add_user_to_db(
-        users_collection=get_users_collection(), user_to_add=user.dict()
-    )
-    if response == 0:
-        return {"status": "User created"}
-    elif response == 1:
-        return {"status": "User already existing"}
-    raise HTTPException(status_code=404, detail="User not created")
+def set_product_rating(preferences: Preferences_post):
+    # TODO: Carregar model amb dades preferencies i retornar producte de prediccio
+    products = get_products(get_products_collection())
+    dir_path = os.path.dirname(os.path.realpath(""))
+    with open(f"{dir_path}/gift-me-back/ml/model_data/asin_dict.json", "r") as file:
+        asin_dict = json.loads(file.read())
+    with open(
+        f"{dir_path}/gift-me-back/ml/model_data/categories_dict.json", "r"
+    ) as file:
+        categories_dict = json.loads(file.read())
+
+    model = load(f"{dir_path}/gift-me-back/ml/model_res/KNN.joblib")
+
+    df = create_df_to_predict(preferences, products, asin_dict, categories_dict)
+    predictions = model.predict(df)
+
+    index_max = predictions.argmax()
+    asin_max = df.iloc[index_max]["asin"]
+    asin = list(asin_dict.keys())[list(asin_dict.values()).index(asin_max)]
+    product_recommended = is_product_in_db_by_asin(get_products_collection(), asin)
+    product_recommended.pop("_id", None)
+    return product_recommended
