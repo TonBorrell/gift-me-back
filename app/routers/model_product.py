@@ -54,14 +54,12 @@ def set_product_rating(preferences: Preferences_post):
     # TODO: Carregar model amb dades preferencies i retornar producte de prediccio
     products = get_products(get_products_collection())
     dir_path = os.path.dirname(os.path.realpath(""))
-    with open(f"{dir_path}/gift-me-back/ml/model_data/asin_dict.json", "r") as file:
+    with open("ml/model_data/asin_dict.json", "r") as file:
         asin_dict = json.loads(file.read())
-    with open(
-        f"{dir_path}/gift-me-back/ml/model_data/categories_dict.json", "r"
-    ) as file:
+    with open("ml/model_data/categories_dict.json", "r") as file:
         categories_dict = json.loads(file.read())
 
-    model = load(f"{dir_path}/gift-me-back/ml/model_res/KNN.joblib")
+    model = load("ml/model_res/KNN.joblib")
 
     df = create_df_to_predict(preferences, products, asin_dict, categories_dict)
     predictions = model.predict(df)
