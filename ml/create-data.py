@@ -25,11 +25,16 @@ if __name__ == "__main__":
     cursor = product_rating_collection.find({})
     products_collection = db["products"]
     categories = {}
+    asin_dict = {}
     cont_cat = 0
+    cont_asin = 0
+    cont_document = 0
 
     dataframe = []
     dataframe_no_cat = []
     for document in cursor:
+        print(cont_document)
+        cont_document += 1
         for asin, rating in document["rating"].items():
             actual_doc = {}
             actual_doc_no_cat = {}
@@ -40,7 +45,10 @@ if __name__ == "__main__":
             actual_doc["cars"] = document["preferences"]["cars"]
             actual_doc["technology"] = document["preferences"]["technology"]
             actual_doc["garden"] = document["preferences"]["garden"]
-            # actual_doc["asin"] = asin
+            if asin not in asin_dict.keys():
+                asin_dict[asin] = cont_asin
+                cont_asin += 1
+            actual_doc["asin"] = asin_dict[asin]
             product = products_collection.find({"asin": asin})
             category = product[0]["category"]["category_id"]
             if category not in categories.keys():
@@ -67,6 +75,12 @@ if __name__ == "__main__":
 
     df.to_parquet("ml/model_data/full_dataframe.parquet")
     df.to_parquet("ml/model_data/full_dataframe_no_categories.parquet")
+
+    with open("ml/model_data/asin_dict.json", "w") as outfile:
+        json.dump(asin_dict, outfile)
+
+    with open("ml/model_data/categories_dict.json", "w") as outfile:
+        json.dump(categories, outfile)
 
     X = df.loc[:, df.columns != "rating"]
     y = df.loc[:, df.columns == "rating"]
