@@ -5,6 +5,8 @@ import os
 from joblib import load
 import pandas as pd
 import json
+import numpy as np
+import random
 
 from db.add_products import get_products, is_product_in_db_by_asin
 from db.product_rating import set_product_rating_in_db, delete_product_rating_in_db
@@ -30,6 +32,8 @@ def create_df_to_predict(
     cat_dict: dict[str, int],
 ):
     dataframe = []
+    print("PREFERENCES:")
+    print(preferences)
     for document in products:
         if document["asin"] in asin_dict:
             actual_doc = {
@@ -59,12 +63,20 @@ def set_product_rating(preferences: Preferences_post):
     with open("ml/model_data/categories_dict.json", "r") as file:
         categories_dict = json.loads(file.read())
 
-    model = load("ml/model_res/KNN.joblib")
+    model = load("ml/model_res/TREE.joblib")
 
     df = create_df_to_predict(preferences, products, asin_dict, categories_dict)
     predictions = model.predict(df)
 
-    index_max = predictions.argmax()
+    top3 = np.sort(predictions.flatten())[-3:]
+    top3_index = []
+
+    for index, pred in enumerate(predictions):
+        if pred in top3:
+            top3_index.append(index)
+
+    # index_max = predictions.argmax()
+    index_max = random.choice(top3_index)
     asin_max = df.iloc[index_max]["asin"]
     asin = list(asin_dict.keys())[list(asin_dict.values()).index(asin_max)]
     product_recommended = is_product_in_db_by_asin(get_products_collection(), asin)
